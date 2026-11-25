@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0D1D6E">
+<title>Command Center · Fazer e Cobrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+<style>
+/* ===== Scorza Design · tokens (gerado de tokens.json) ===== */
+/*TOKENS*/
+</style>
+<style>
+/* ===== Scorza Design · componentes (bundle.css) ===== */
+/*BUNDLE*/
+</style>
+<style>
+/* ===== Command Center · layout do app (só tokens) ===== */
+html, body { margin: 0; min-height: 100%; }
+body { background: var(--surface-base); }
+button, input, select, textarea { font: inherit; color: inherit; }
+.page { min-height: 100vh; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-5); }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+.brand { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); }
+.title { margin: 0; font: 700 28px/32px var(--font-display); color: var(--ink); letter-spacing: -.01em; }
+.date { margin: 0; font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
+.date::first-letter { text-transform: uppercase; }
+.acts { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+
+.grid { display: grid; grid-template-columns: 7fr 5fr; gap: var(--space-6); align-items: start; }
+.col { display: flex; flex-direction: column; gap: var(--space-4); }
+.sz-section .sz-section__head > div { min-width: 0; }
+.sz-capture .sz-hint { color: var(--ink-muted); } /* sobre o vidro da captura, o subtle reprova no Eclipse e no Profundo */
+.sz-section__head .sz-meter { white-space: nowrap; }
+.cc-empty { font: 400 13px/18px var(--font-sans); color: var(--ink-subtle); padding: var(--space-1) 2px; list-style: none; }
+.sz-section--backlog .sz-list { max-height: 320px; overflow-y: auto; }
+
+/* tarefa: ferramentas aparecem no hover/foco */
+.sz-task { position: relative; }
+/* ferramentas flutuam sobre o card no hover, sem roubar largura do texto */
+.cc-tools { position: absolute; top: var(--space-2); right: var(--space-2); display: flex; gap: var(--space-1); align-items: center; padding: 2px; border-radius: var(--radius-pill); background: var(--surface-raised); box-shadow: var(--shadow-raised); opacity: 0; pointer-events: none; transition: opacity var(--duration-base) var(--ease-out); }
+.sz-task:hover .cc-tools, .sz-task:focus-within .cc-tools { opacity: 1; pointer-events: auto; }
+@media (hover: none) { .cc-tools { position: static; opacity: 1; pointer-events: auto; box-shadow: none; background: transparent; } }
+.cc-move { height: 28px; border-radius: var(--radius-pill); border: 1px solid var(--control-border); background: var(--surface-raised); color: var(--ink-muted); font: 500 12px/16px var(--font-sans); padding: 0 var(--space-2); }
+.cc-pend { width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--cat-medium); flex: none; }
+.cc-inline { width: 100%; height: 30px; border-radius: var(--radius-sm); border: 1px solid var(--focus-ring); background: var(--surface-raised); color: var(--ink); padding: 0 var(--space-2); font: 400 14px/20px var(--font-sans); }
+.sz-task__text { cursor: text; }
+.sz-chip { cursor: pointer; }
+.sz-task.is-pop { animation: cc-pop .35s var(--ease-spring); }
+@keyframes cc-pop { 40% { transform: scale(1.015); } }
+
+/* adicionar */
+.cc-add { display: flex; gap: var(--space-2); }
+.cc-add .sz-add { flex: 1; min-width: 0; }
+.cc-add .cc-owner { flex: 0 0 132px; }
+
+/* prévia da triagem */
+.cc-draft { border-top: 1px solid var(--line); padding-top: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
+.cc-draft h4 { margin: 0; font: 650 16px/22px var(--font-display); color: var(--ink); }
+.cc-draft__note { margin: 0; font: 500 12px/16px var(--font-sans); color: var(--status-danger); }
+.cc-draft__row { display: grid; grid-template-columns: 150px 1fr 150px 32px; gap: var(--space-2); align-items: center; }
+.cc-draft__foot { display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-1); }
+.cc-input { height: 36px; width: 100%; border-radius: var(--radius-md); border: 1px solid var(--control-border); background: var(--surface-raised); color: var(--ink); padding: 0 var(--space-3); font: 400 14px/20px var(--font-sans); }
+.cc-input:focus { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.cc-input[disabled] { opacity: .4; }
+.cc-input::placeholder { color: var(--ink-subtle); }
+
+/* diálogos nativos com a pele do Scorza */
+dialog.sz-dialog { margin: auto; max-height: calc(100vh - 32px); overflow-y: auto; }
+dialog.sz-dialog::backdrop { background: rgba(6, 10, 24, .55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+#config.sz-dialog { max-width: 560px; }
+.cc-field { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-4); }
+.cc-field > label, .cc-label { font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.cc-field p { margin: 0; font: 400 12px/16px var(--font-sans); color: var(--ink-muted); }
+.cc-group { border-top: 1px solid var(--line); padding-top: var(--space-4); margin-top: var(--space-2); }
+.cc-group h4 { margin: 0 0 var(--space-3); font: 700 11px/14px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+.cc-row { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.cc-row--end { justify-content: flex-end; }
+.cc-status { margin-right: auto; font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
+.cc-status.ok { color: var(--status-ok); } .cc-status.err { color: var(--status-danger); }
+.cc-dialog details { border-radius: var(--radius-md); background: var(--surface-sunken); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-4); font: 400 13px/19px var(--font-sans); color: var(--ink-muted); }
+.cc-dialog details summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.cc-dialog details ol { margin: var(--space-2) 0 0; padding-left: 20px; }
+.cc-dialog details li { margin-bottom: var(--space-1); }
+.cc-dialog code { font: 500 12px/16px var(--font-mono); background: var(--surface-raised); padding: 1px 5px; border-radius: var(--radius-xs); color: var(--ink); }
+.cc-dialog .sz-seg, .cc-dialog .sz-toggle { align-self: flex-start; }
+
+/* toast */
+.cc-toast { position: fixed; left: 50%; bottom: var(--space-6); transform: translate(-50%, 16px); opacity: 0; pointer-events: none; transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-slow) var(--ease-spring); z-index: 50; max-width: calc(100% - 32px); }
+.cc-toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
+@media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .wrap { padding: var(--space-4); }
+  .sz-capture__row { flex-direction: column; align-items: stretch; }
+  .sz-capture__actions { flex-direction: row; }
+  .cc-draft__row { grid-template-columns: 1fr 1fr 32px; }
+  .cc-draft__row .cc-d-text { grid-column: 1 / -1; order: -1; }
+  .cc-add .cc-owner { flex-basis: 96px; }
+}
+</style>
+</head>
+<body>
+<div class="page sz-bg sz-bg--page" id="page"><div class="sz-geo" id="geo" aria-hidden="true"></div>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <h1 class="title">Command Center</h1>
+      <p class="date" id="date"></p>
+    </div>
+    <div class="acts">
+      <button class="sz-pill sz-glass" id="syncPill" title="Sincronizar agora"><span class="sz-led"></span><span id="syncText">Só neste navegador</span></button>
+      <button class="sz-btn sz-btn--glass sz-btn--icon" id="btnConfig" aria-label="Configurações" title="Configurações"><!--i:settings--></button>
+      <button class="sz-btn sz-btn--glass" id="btnRitual"><!--i:sunset-->Ritual de fechamento</button>
+    </div>
+  </header>
+
+  <section class="sz-capture" aria-labelledby="capLabel">
+    <label class="sz-capture__label" id="capLabel" for="raw"><!--i:sparkles:sm-->Captura rápida</label>
+    <div class="sz-capture__row">
+      <textarea class="sz-textarea" id="raw" placeholder="Cole mensagens do WhatsApp ou notas de reunião, tudo misturado"></textarea>
+      <div class="sz-capture__actions">
+        <button class="sz-btn sz-btn--primary" id="btnTriage"><!--i:sparkles--><span id="triageLabel">Triar</span><span class="sz-kbd">Ctrl ↵</span></button>
+        <button class="sz-btn sz-btn--soft" id="btnQuick" title="Adiciona o texto inteiro como um destrave rápido">Destrave rápido</button>
+      </div>
+    </div>
+    <p class="sz-hint" id="engineHint"></p>
+    <div class="cc-draft" id="draft" hidden></div>
+  </section>
+
+  <main class="grid">
+    <div class="col" id="col-do">
+      <div class="sz-colhead"><h2>Fazer hoje</h2><small id="doCounter"></small></div>
+    </div>
+    <div class="col" id="col-follow">
+      <div class="sz-colhead"><h2>Cobrar e fila</h2><small id="followCounter"></small></div>
+    </div>
+  </main>
+</div>
+</div>
+
+<!-- Ritual -->
+<dialog class="sz-dialog cc-dialog" id="ritual" aria-labelledby="ritualTitle">
+  <h3 class="sz-dialog__title" id="ritualTitle">Ritual de fechamento</h3>
+  <p class="sz-dialog__lead">Dois minutos para fechar o dia com a cabeça limpa.</p>
+  <div class="sz-stats" id="ritualStats"></div>
+  <div class="sz-dialog__actions">
+    <button class="sz-btn sz-btn--soft" id="btnCopy"><!--i:copy-->Copiar resumo do dia</button>
+    <button class="sz-btn sz-btn--primary" id="btnArchive"><!--i:archive-->Arquivar concluídas</button>
+    <button class="sz-btn sz-btn--ghost" data-close>Voltar</button>
+  </div>
+</dialog>
+
+<!-- Configurações -->
+<dialog class="sz-dialog cc-dialog" id="config" aria-labelledby="cfgTitle">
+  <h3 class="sz-dialog__title" id="cfgTitle">Configurações</h3>
+  <p class="sz-dialog__lead">Tudo fica salvo só neste navegador.</p>
+
+  <div class="cc-field">
+    <span class="cc-label" id="themeLabel">Tema</span>
+    <div class="sz-seg" role="radiogroup" aria-labelledby="themeLabel">
+      <label><input type="radio" name="theme" value="light"><span>Claro</span></label>
+      <label><input type="radio" name="theme" value="pastel"><span>Pastel</span></label>
+      <label><input type="radio" name="theme" value="dark"><span>Black</span></label>
+    </div>
+  </div>
+  <div class="cc-field">
+    <label class="sz-toggle"><input type="checkbox" id="cfgRotate"><span class="sz-toggle__track"><span class="sz-toggle__thumb"></span></span>Variar fundo todo dia</label>
+    <p id="rotateHint"></p>
+  </div>
+  <div class="cc-field" id="fixedBgField">
+    <label for="cfgBg">Fundo fixo</label>
+    <select class="cc-input" id="cfgBg"></select>
+  </div>
+
+  <div class="cc-group">
+    <h4>Google Tasks</h4>
+    <details id="howto">
+      <summary>Como conectar (5 min)</summary>
+      <ol>
+        <li>Logado no Gmail do trabalho, abra <code>script.google.com</code> → <b>Novo projeto</b> e cole o arquivo <code>Code.gs</code>. Salve.</li>
+        <li>Em <b>Serviços (+)</b>, adicione <b>Google Tasks API</b>.</li>
+        <li>Escolha a função <code>setup</code> e clique em <b>▶ Executar</b>. Autorize. O token aparece no <b>Registro de execução</b> e em <b>Configurações do projeto → Propriedades do script → CC_TOKEN</b>.</li>
+        <li><b>Implantar → Nova implantação → App da Web</b>. Executar como: <b>Eu</b>. Quem pode acessar: <b>Qualquer pessoa</b>.</li>
+        <li>Cole abaixo a URL (termina em <code>/exec</code>) e o token, depois clique em <b>Testar conexão</b>.</li>
+      </ol>
+    </details>
+    <div class="cc-field">
+      <label for="cfgUrl">URL do Apps Script</label>
+      <input class="cc-input" id="cfgUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+    </div>
+    <div class="cc-field">
+      <label for="cfgToken">Token</label>
+      <input class="cc-input" id="cfgToken" type="password" placeholder="CC_TOKEN, gerado pela função setup" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="cc-group">
+    <h4>Triagem com IA</h4>
+    <p class="sz-hint" id="aiStatus" style="margin-bottom:var(--space-3)"></p>
+    <details>
+      <summary>Usar uma chave neste navegador (sem Apps Script)</summary>
+      <p style="margin:var(--space-2) 0">O recomendado é guardar a chave no Apps Script, em Propriedades do script → <code>GEMINI_API_KEY</code>. Use este campo só se não for conectar o Google Tasks.</p>
+      <div class="cc-field">
+        <label for="cfgKey">Chave da API Gemini</label>
+        <input class="cc-input" id="cfgKey" type="password" placeholder="AIza…" autocomplete="off">
+      </div>
+      <div class="cc-field" style="margin-bottom:0">
+        <label for="cfgModel">Modelo</label>
+        <input class="cc-input" id="cfgModel" type="text" placeholder="gemini-3.8-flash">
+      </div>
+    </details>
+    <div class="cc-row" style="margin-bottom:var(--space-4)">
+      <span class="cc-status" id="learnStatus"></span>
+      <button class="sz-btn sz-btn--ghost sz-btn--sm" id="btnForget">Esquecer correções</button>
+    </div>
+  </div>
+
+  <div class="cc-group">
+    <h4>Backup</h4>
+    <div class="cc-row" style="margin-bottom:var(--space-4)">
+      <button class="sz-btn sz-btn--soft sz-btn--sm" id="btnExport"><!--i:download:sm-->Exportar JSON</button>
+      <button class="sz-btn sz-btn--soft sz-btn--sm" id="btnImport"><!--i:upload:sm-->Importar JSON</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+  </div>
+
+  <div class="cc-row cc-row--end">
+    <span class="cc-status" id="cfgStatus"></span>
+    <button class="sz-btn sz-btn--ghost" data-close>Cancelar</button>
+    <button class="sz-btn sz-btn--soft" id="btnTest">Testar conexão</button>
+    <button class="sz-btn sz-btn--primary" id="btnSaveCfg">Salvar</button>
+  </div>
+</dialog>
+
+<div class="cc-toast" id="toast" role="status" aria-live="polite"><div class="sz-toast"><span id="toastMsg"></span><button class="sz-btn sz-btn--ghost sz-btn--sm" id="toastUndo" hidden><!--i:undo:sm-->Desfazer</button></div></div>
+
+<script>
+const ICONS = /*ICONS*/;
+const ico = (n, sm) => `<svg class="sz-ico${sm ? ' sz-ico--sm' : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+document.querySelectorAll('*').forEach(el => {
+  [...el.childNodes].forEach(n => {
+    if (n.nodeType === 8 && n.data.startsWith('i:')) {
+      const [, name, size] = n.data.split(':');
+      const t = document.createElement('template'); t.innerHTML = ico(name, size === 'sm');
+      n.replaceWith(t.content);
+    }
+  });
+});
+
+/* =========================================================
+   CATEGORIAS (Regra 1-3-5)
+   ========================================================= */
+const CATS = {
+  mit:      { col:'do',     icon:'flame',     limit:1, title:'A grande entrega',      sub:'Se fizer só isso, o dia valeu',                      short:'Grande entrega', add:'Qual é a grande entrega de hoje?' },
+  quick:    { col:'do',     icon:'zap',       limit:5, title:'Destraves rápidos',     sub:'Até 5 min · entre reuniões',                         short:'Destrave',       add:'Adicionar destrave' },
+  medium:   { col:'do',     icon:'pin',       limit:3, title:'Entregas médias',       sub:'30 a 45 min · um bloco curto',                       short:'Média',          add:'Adicionar entrega média' },
+  followup: { col:'follow', icon:'hourglass',          title:'Delegado e aguardando', sub:'Está com outra pessoa · cobre em um clique',         short:'Cobrar',         add:'O que você delegou?' },
+  backlog:  { col:'follow', icon:'inbox',              title:'Fila',                  sub:'Fora do foco de hoje · o que nasce no Google Tasks cai aqui', short:'Fila',  add:'Estacionar uma ideia' },
+};
+const ORDER = ['mit','quick','medium','followup','backlog'];
+const DO_CATS = ['mit','quick','medium'];
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+// Modelo da triagem (só para a chave neste navegador; no Apps Script o modelo fica em GEMINI_MODEL).
+const MODEL_ID = 'gemini-3.8-flash';
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const nowIso = () => new Date().toISOString();
+const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+const S = {
+  tasks: load('cc2_tasks', null),
+  cfg: Object.assign({ url:'', token:'', key:'', model:MODEL_ID, theme:'light', rotate:true, bg:'' }, load('cc2_cfg', {})),
+  meta: Object.assign({ pendingClear:false, lastSync:0, user:'', ai:null, aiModel:'' }, load('cc2_meta', {})),
+  learn: Object.assign({ examples:[], weights:{}, owners:[] }, load('cc2_learn', {})),
+  sync: { state:'local', msg:'' },
+  draft: [],
+};
+if (/^gemini-2\.5/.test(S.cfg.model || '')) S.cfg.model = MODEL_ID; // migra configs antigas
+if (!S.tasks) { // migra a v1 do manual (cc_tasks_v1), se existir
+  const v1 = load('cc_tasks_v1', null);
+  S.tasks = Array.isArray(v1) ? v1.map(t => ({
+    id: uid(), gid:null, text:t.text, category:t.category || 'medium', owner:t.owner || '',
+    done:!!t.done, completedAt: t.done ? nowIso() : null, createdAt: nowIso(), pending:true, rev:1, deleted:false
+  })) : [];
+  try { if (!S.cfg.key && localStorage.getItem('cc_gemini_key')) S.cfg.key = localStorage.getItem('cc_gemini_key'); } catch {}
+}
+
+function save() { store('cc2_tasks', S.tasks); store('cc2_cfg', S.cfg); store('cc2_meta', S.meta); store('cc2_learn', S.learn); }
+const connected = () => !!(S.cfg.url && S.cfg.token);
+const online = () => navigator.onLine !== false;
+const visible = () => S.tasks.filter(t => !t.deleted && !t.archived);
+const byId = id => S.tasks.find(t => t.id === id);
+const isToday = iso => { if (!iso) return false; const d = new Date(iso), n = new Date(); return d.toDateString() === n.toDateString(); };
+
+/* =========================================================
+   VISUAL: TEMA E FUNDO (rotação diária)
+   ========================================================= */
+const GEO = {
+  eclipse: '<i class="pl-light" style="left:52%;top:-10%;width:28%;height:120%"></i><i class="glow-warm" style="left:62%;top:30%;width:12%;height:50%"></i><i class="pl-deep" style="left:70%;top:8%;width:40%;height:84%"></i><i class="glow-sun" style="left:64%;top:14%;width:12%;height:72%"></i><i class="glow-cool" style="left:96%;top:20%;width:8%;height:60%"></i>',
+  noturno: '<i class="pl-smoke" style="left:52%;top:-10%;width:28%;height:120%"></i><i class="glow-warm" style="left:62%;top:30%;width:12%;height:50%"></i><i class="pl-night" style="left:70%;top:8%;width:40%;height:84%"></i><i class="glow-sun" style="left:64%;top:14%;width:12%;height:72%"></i><i class="glow-cool" style="left:96%;top:20%;width:8%;height:60%"></i>',
+};
+const BGS = {
+  nevoa:    { name:'Névoa',          cls:'sz-bg--nevoa' },
+  eclipse:  { name:'Eclipse',        cls:'sz-bg--geo',      geo:'eclipse' },
+  profundo: { name:'Profundo',       cls:'sz-bg--profundo' },
+  noturno:  { name:'Eclipse Noturno', cls:'sz-bg--geo-noite', geo:'noturno' },
+};
+const THEME_BGS = { light:['nevoa','eclipse'], pastel:['nevoa','eclipse'], dark:['profundo','noturno'] };
+const dayIndex = (d = new Date()) => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5);
+
+function currentBg(cfg = S.cfg) {
+  const pair = THEME_BGS[cfg.theme] || THEME_BGS.light;
+  if (!cfg.rotate && pair.includes(cfg.bg)) return cfg.bg;
+  return pair[dayIndex() % 2]; // alterna um dia sim, um dia não
+}
+let lookKey = '';
+function applyLook() {
+  const theme = THEME_BGS[S.cfg.theme] ? S.cfg.theme : 'light';
+  const bg = currentBg();
+  const key = theme + bg;
+  if (key === lookKey) return;
+  lookKey = key;
+  document.documentElement.dataset.theme = theme;
+  $('#page').className = 'page sz-bg sz-bg--page ' + BGS[bg].cls;
+  $('#geo').innerHTML = BGS[bg].geo ? GEO[BGS[bg].geo] : '';
+  $('meta[name=theme-color]').content = theme === 'dark' ? '#060A18' : theme === 'pastel' ? '#F4F1EA' : '#0D1D6E';
+}
+
+/* =========================================================
+   TÍTULOS NO GOOGLE TASKS (a categoria vai no prefixo)
+   ========================================================= */
+const PREFIX = { mit:'🔥 [MIT] ', quick:'⚡ [<5m] ', medium:'📌 [Média] ' };
+function encodeTitle(t) {
+  if (t.category === 'followup') return `👀 [Cobrar${t.owner ? ' ' + t.owner : ''}] ${t.text}`;
+  return (PREFIX[t.category] || '') + t.text;
+}
+const TAG_RE = /^[^\[\p{L}\p{N}]{0,8}\[(MIT|<\s*5\s*m(?:in)?|M[ée]dia|Fila|Cobrar(?:\s+([^\]]*))?)\]\s*/iu;
+function decodeTitle(title = '') {
+  const m = title.match(TAG_RE);
+  if (!m) return { text: title.trim(), category:'backlog', owner:'' };
+  const tag = m[1].toLowerCase();
+  const category = tag === 'mit' ? 'mit' : tag.startsWith('<') ? 'quick' : tag.startsWith('m') ? 'medium' : tag === 'fila' ? 'backlog' : 'followup';
+  return { text: title.slice(m[0].length).trim(), category, owner: category === 'followup' ? (m[2] || '').trim() : '' };
+}
+
+/* =========================================================
+   APRENDIZADO (as suas correções viram regra)
+   ========================================================= */
+const STOP = new Set('para pela pelo como sobre hoje amanha depois antes ainda quando onde porque entao isso esse essa este esta aquele aquela tudo todos todas mais menos muito pouco fazer ficar estar sera seria pode poder precisa preciso favor obrigado obrigada bom dia tarde noite ola oi'.split(' '));
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+const words = s => [...new Set((norm(s).match(/[a-z0-9]{4,}/g) || []).filter(w => !STOP.has(w)))];
+
+function learn(items) {
+  const L = S.learn;
+  items.forEach(({ text, category, owner, orig }) => {
+    if (!text || !CATS[category]) return;
+    L.examples = L.examples.filter(x => norm(x.text) !== norm(text));
+    L.examples.push({ text, category, owner: owner || '' });
+    if (orig && orig !== category) {
+      words(text).forEach(w => {
+        const row = L.weights[w] || (L.weights[w] = {});
+        row[category] = (row[category] || 0) + 1;
+        if (row[orig]) row[orig] = Math.max(0, row[orig] - 0.5);
+      });
+    }
+    if (owner && !L.owners.some(o => norm(o) === norm(owner))) L.owners.push(owner);
+  });
+  L.examples = L.examples.slice(-80);
+  L.owners = L.owners.slice(-60);
+  const keys = Object.keys(L.weights);
+  if (keys.length > 1500) keys.slice(0, keys.length - 1500).forEach(k => delete L.weights[k]);
+}
+function correctionsCount() { return Object.values(S.learn.weights).reduce((n, r) => n + Object.values(r).reduce((a, b) => a + b, 0), 0); }
+
+// Aplica a memória sobre qualquer resultado de triagem (IA ou motor local)
+function remember(item) {
+  const exact = [...S.learn.examples].reverse().find(x => norm(x.text) === norm(item.text));
+  if (exact) return { ...item, category: exact.category, owner: exact.owner || item.owner };
+  return item;
+}
+function learnedCategory(text) {
+  const score = {};
+  words(text).forEach(w => { const r = S.learn.weights[w]; if (r) for (const c in r) score[c] = (score[c] || 0) + r[c]; });
+  const ranked = Object.entries(score).sort((a, b) => b[1] - a[1]);
+  if (!ranked.length || ranked[0][1] < 1) return null;
+  if (ranked[1] && ranked[0][1] - ranked[1][1] < 0.75) return null;
+  return ranked[0][0];
+}
+function knownOwner(text) {
+  const n = ' ' + norm(text).replace(/[^a-z0-9 ]/g, ' ') + ' ';
+  return S.learn.owners.find(o => n.includes(' ' + norm(o) + ' ')) || '';
+}
+
+/* =========================================================
+   MUTAÇÕES (sempre otimistas; sobem para o Google no próximo sync)
+   ========================================================= */
+function touch(t) { t.pending = true; t.rev = (t.rev || 0) + 1; }
+function commit() { save(); render(); scheduleSync(); }
+
+function addTask(text, category, owner = '') {
+  text = text.trim(); if (!text) return null;
+  const t = { id:uid(), gid:null, text, category, owner: owner.trim(), done:false, completedAt:null, createdAt:nowIso(), pending:true, rev:1, deleted:false };
+  S.tasks.unshift(t);
+  return t;
+}
+function toggleDone(id) {
+  const t = byId(id); if (!t) return;
+  t.done = !t.done; t.completedAt = t.done ? nowIso() : null; touch(t);
+  commit();
+  if (t.done) { const el = document.querySelector(`[data-id="${id}"]`); el && el.classList.add('is-pop'); }
+}
+function moveTask(id, cat) {
+  const t = byId(id); if (!t) return;
+  const from = t.category;
+  t.category = cat; if (cat !== 'followup') t.owner = ''; touch(t);
+  learn([{ text: t.text, category: cat, owner: t.owner, orig: from }]);
+  commit();
+  if (cat === 'followup' && !t.owner) setTimeout(() => { const b = document.querySelector(`[data-id="${id}"] [data-act=owner]`); b && b.click(); }, 30);
+  else toast(`Movida para ${CATS[cat].short}`);
+}
+function editTask(id, fields) {
+  const t = byId(id); if (!t) return;
+  Object.assign(t, fields); touch(t);
+  if (fields.owner) learn([{ text: t.text, category: t.category, owner: fields.owner }]);
+  commit();
+}
+function deleteTask(id) {
+  const t = byId(id); if (!t) return;
+  const snapshot = { ...t };
+  if (t.gid) { t.deleted = true; touch(t); } else S.tasks = S.tasks.filter(x => x.id !== id);
+  commit();
+  toast('Tarefa excluída', () => {
+    const cur = byId(id);
+    if (cur) { cur.deleted = false; touch(cur); } else S.tasks.unshift({ ...snapshot, pending:true, rev:(snapshot.rev || 0) + 1, deleted:false });
+    commit();
+  });
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function buildSections() {
+  ORDER.forEach(cat => {
+    const c = CATS[cat];
+    const sec = document.createElement('section');
+    sec.className = `sz-section sz-section--${cat} c-${cat}`;
+    sec.id = `sec-${cat}`;
+    sec.setAttribute('aria-labelledby', `h-${cat}`);
+    sec.innerHTML = `
+      <div class="sz-section__head">
+        <span class="sz-orb">${ico(c.icon)}</span>
+        <div><h3 class="sz-section__title" id="h-${cat}">${esc(c.title)}</h3><p class="sz-section__sub">${esc(c.sub)}</p></div>
+        <span class="sz-meter" id="meter-${cat}"></span>
+      </div>
+      <p class="sz-section__warn" id="warn-${cat}" hidden></p>
+      <ul class="sz-list" id="list-${cat}"></ul>
+      <form class="cc-add" data-cat="${cat}">
+        <input class="sz-add" name="text" placeholder="${esc(c.add)}" aria-label="${esc(c.add)}" autocomplete="off">
+        ${cat === 'followup' ? '<input class="sz-add cc-owner" name="owner" placeholder="Com quem?" aria-label="Responsável" autocomplete="off" list="ownersList">' : ''}
+        <button class="sr-only" type="submit">Adicionar</button>
+      </form>`;
+    $(c.col === 'do' ? '#col-do' : '#col-follow').appendChild(sec);
+  });
+  const dl = document.createElement('datalist'); dl.id = 'ownersList'; document.body.appendChild(dl);
+}
+
+function ago(iso) {
+  if (!iso) return '';
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 864e5);
+  return days <= 0 ? 'desde hoje' : days === 1 ? 'há 1 dia' : `há ${days} dias`;
+}
+
+function itemHtml(t) {
+  let meta = '', cobrar = '';
+  if (t.category === 'followup') {
+    const days = Math.floor((Date.now() - new Date(t.createdAt).getTime()) / 864e5);
+    meta = `<div class="sz-task__meta">
+      ${t.owner ? `<button class="sz-chip" data-act="owner" title="Trocar responsável">${ico('user', true)}${esc(t.owner)}</button>`
+                : `<button class="sz-chip sz-chip--empty" data-act="owner">Definir responsável</button>`}
+      <span class="sz-age ${days >= 3 ? 'sz-age--late' : ''}">${ago(t.createdAt)}</span>__COBRAR__</div>`;
+    if (!t.done) {
+      const msg = `Oi${t.owner ? ' ' + t.owner : ''}, tudo bem? Como está o andamento de "${t.text}"? Consegue me dar um retorno rápido?`;
+      cobrar = `<a class="sz-btn sz-btn--cobrar sz-btn--sm" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">${ico('msg', true)}Cobrar</a>`;
+    }
+    meta = meta.replace('__COBRAR__', cobrar); cobrar = '';
+  }
+  const opts = ORDER.map(k => `<option value="${k}" ${k === t.category ? 'selected' : ''}>${CATS[k].short}</option>`).join('');
+  return `<li class="sz-task c-${t.category} ${t.done ? 'is-done' : ''}" data-id="${t.id}">
+    <input type="checkbox" class="sz-check" ${t.done ? 'checked' : ''} data-act="toggle" aria-label="Concluir: ${esc(t.text)}">
+    <div class="sz-task__body"><span class="sz-task__text" data-act="edit" title="Clique duas vezes para editar">${esc(t.text)}</span>${meta}</div>
+    <div class="sz-task__actions">
+      ${cobrar}
+      ${t.link ? `<a class="sz-btn sz-btn--ghost sz-btn--sm sz-btn--icon" href="${esc(t.link)}" target="_blank" rel="noopener" aria-label="Abrir no Monday" title="Abrir no Monday">${ico('external', true)}</a>` : ''}
+      ${connected() && t.pending ? '<span class="cc-pend" title="Aguardando envio ao Google Tasks"></span>' : ''}
+      <div class="cc-tools">
+        <select class="cc-move" data-act="move" aria-label="Mover para">${opts}</select>
+        <button class="sz-btn sz-btn--ghost sz-btn--sm sz-btn--icon" data-act="del" aria-label="Excluir" title="Excluir">${ico('x', true)}</button>
+      </div>
+    </div>
+  </li>`;
+}
+
+function meterHtml(cat, open, doneToday) {
+  const c = CATS[cat];
+  if (!c.limit) return `${open} ${open === 1 ? 'aberta' : 'abertas'}`;
+  const total = open + doneToday;
+  const n = Math.max(c.limit, total);
+  const dots = Array.from({ length: n }, (_, i) =>
+    `<span class="sz-meter__dot ${i < doneToday ? 'is-done' : ''} ${i >= c.limit ? 'is-over' : ''}"></span>`).join('');
+  return `<span class="sz-meter__dots" aria-hidden="true">${dots}</span>${total}/${c.limit}`;
+}
+
+function render() {
+  applyLook();
+  $('#date').textContent = new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+  const all = visible();
+
+  ORDER.forEach(cat => {
+    const items = all.filter(t => t.category === cat);
+    const open = items.filter(t => !t.done);
+    const done = items.filter(t => t.done).sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''));
+    const doneToday = done.filter(t => isToday(t.completedAt)).length;
+    $(`#list-${cat}`).innerHTML = items.length ? [...open, ...done].map(itemHtml).join('') : `<li class="cc-empty">${emptyText(cat)}</li>`;
+
+    const c = CATS[cat], meter = $(`#meter-${cat}`), warn = $(`#warn-${cat}`);
+    meter.innerHTML = meterHtml(cat, open.length, doneToday);
+    meter.title = c.limit ? `${doneToday} concluídas hoje · ${open.length} abertas · limite ${c.limit}` : `${open.length} abertas`;
+    const over = c.limit && open.length + doneToday > c.limit;
+    meter.className = 'sz-meter' + (over ? ' sz-meter--over' : '');
+    warn.hidden = !over;
+    if (over) warn.innerHTML = ico('alert', true) + esc(cat === 'mit'
+      ? 'Mais de uma grande entrega dilui o foco. Escolha uma e mova as outras.'
+      : `Acima do limite de ${c.limit}. Mova o excedente para a Fila.`);
+  });
+
+  const doOpen = all.filter(t => !t.done && DO_CATS.includes(t.category)).length;
+  const doDone = all.filter(t => t.done && isToday(t.completedAt) && DO_CATS.includes(t.category)).length;
+  $('#doCounter').textContent = `${doDone} ${doDone === 1 ? 'feita' : 'feitas'} · ${doOpen} ${doOpen === 1 ? 'aberta' : 'abertas'}`;
+  const fOpen = all.filter(t => !t.done && t.category === 'followup').length;
+  $('#followCounter').textContent = fOpen ? `${fOpen} aguardando retorno` : 'nada pendente';
+  $('#ownersList').innerHTML = S.learn.owners.map(o => `<option value="${esc(o)}">`).join('');
+
+  $('#engineHint').innerHTML = engineText() + ' Você revisa antes de entrar nas listas.';
+  renderSync();
+}
+
+function engineText() {
+  const n = S.learn.examples.length;
+  const mem = n ? ` Lembra de ${n} ${n === 1 ? 'tarefa classificada' : 'tarefas classificadas'} por você.` : '';
+  if (connected() && S.meta.ai) return `Triagem com IA no Apps Script (${esc(S.meta.aiModel || 'Gemini')}).${mem}`;
+  if (S.cfg.key) return `Triagem com IA neste navegador (${esc(S.cfg.model || MODEL_ID)}).${mem}`;
+  return `Triagem pelo motor local, que aprende com as suas correções.${mem}`;
+}
+
+function emptyText(cat) {
+  return {
+    mit: 'Nenhuma grande entrega definida. O que faria o dia valer a pena?',
+    quick: 'Nada travando o time agora.',
+    medium: 'Sem entregas médias hoje.',
+    followup: 'Ninguém para cobrar. Tudo que você delegar aparece aqui.',
+    backlog: 'Fila vazia.',
+  }[cat];
+}
+
+function renderSync() {
+  const pill = $('#syncPill'), txt = $('#syncText');
+  pill.className = 'sz-pill sz-glass';
+  pill.title = 'Sincronizar agora';
+  const pend = S.tasks.filter(t => t.pending).length;
+  if (!connected()) { txt.textContent = 'Só neste navegador · conectar'; return; }
+  if (!online()) { txt.textContent = pend ? `Offline · ${pend} para enviar` : 'Offline · tudo salvo aqui'; pill.title = 'Sem internet. Suas mudanças ficam salvas e sobem quando a conexão voltar.'; return; }
+  if (S.sync.state === 'syncing') { pill.classList.add('sz-pill--syncing'); txt.textContent = 'Sincronizando…'; return; }
+  if (S.sync.state === 'error') { pill.classList.add('sz-pill--error'); txt.textContent = 'Falha ao sincronizar · tentar de novo'; pill.title = S.sync.msg; return; }
+  pill.classList.add('sz-pill--ok');
+  pill.title = (S.meta.user ? `Conectado como ${S.meta.user}. ` : '') + 'Clique para sincronizar agora.';
+  const at = S.meta.lastSync ? new Date(S.meta.lastSync).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }) : '—';
+  txt.textContent = pend ? `Google Tasks · ${pend} para enviar` : `Google Tasks · ${at}`;
+}
+
+/* =========================================================
+   EVENTOS DAS LISTAS
+   ========================================================= */
+document.addEventListener('change', e => {
+  const li = e.target.closest('.sz-task'); if (!li) return;
+  const id = li.dataset.id;
+  if (e.target.dataset.act === 'toggle') toggleDone(id);
+  if (e.target.dataset.act === 'move') moveTask(id, e.target.value);
+});
+document.addEventListener('click', e => {
+  const act = e.target.closest('[data-act]'); const li = e.target.closest('.sz-task');
+  if (!act || !li) return;
+  const id = li.dataset.id;
+  if (act.dataset.act === 'del') deleteTask(id);
+  if (act.dataset.act === 'owner') inlineEdit(act, byId(id).owner, v => editTask(id, { owner: v }), 'Nome');
+});
+document.addEventListener('dblclick', e => {
+  const el = e.target.closest('[data-act=edit]'); if (!el) return;
+  const id = el.closest('.sz-task').dataset.id;
+  inlineEdit(el, byId(id).text, v => v && editTask(id, { text: v }));
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest('form.cc-add'); if (!f) return;
+  e.preventDefault();
+  const text = f.text.value, owner = f.owner ? f.owner.value : '';
+  if (!text.trim()) return;
+  addTask(text, f.dataset.cat, owner);
+  learn([{ text: text.trim(), category: f.dataset.cat, owner }]);
+  f.reset(); commit(); f.text.focus();
+});
+
+function inlineEdit(el, value, onSave, placeholder = '') {
+  const input = document.createElement('input');
+  input.className = 'cc-inline'; input.value = value || ''; input.placeholder = placeholder;
+  if (placeholder === 'Nome') input.setAttribute('list', 'ownersList');
+  el.replaceWith(input); input.focus(); input.select();
+  let doneFlag = false;
+  const finish = ok => { if (doneFlag) return; doneFlag = true; if (ok && input.value.trim() !== (value || '')) onSave(input.value.trim()); else render(); };
+  input.addEventListener('keydown', ev => { if (ev.key === 'Enter') finish(true); if (ev.key === 'Escape') { ev.preventDefault(); finish(false); } });
+  input.addEventListener('blur', () => finish(true));
+}
+
+/* =========================================================
+   TRIAGEM: IA (Apps Script ou navegador) ou motor local → PRÉVIA → ADICIONAR
+   ========================================================= */
+const RE_FOLLOW = /\b(cobrar|cobra|aguard\w*|esperando|esperar retorno|pedir (?:pra|para)|pedi (?:pra|para)|ficou de|follow[- ]?up|retorno d[oa]s?|delegar|delegado)\b/i;
+const RE_OWNER = [
+  /(?:[Cc]obr(?:ar|a)|[Ll]embrar|[Pp]edi(?:r)? (?:pra|para)|[Dd]elegar (?:pra|para)|[Aa]guardar|[Ee]sperando|[Rr]etorno)\s+(?:(?:o\s+)?(?:retorno|resposta|aprova[çc][ãa]o)\s+)?(?:d[oa]s?\s+|com\s+(?:o\s+|a\s+)?|(?:o|a|ao|à)\s+)?([A-ZÀ-Ý][a-zà-ÿ]+)/,
+  /^([A-ZÀ-Ý][a-zà-ÿ]+)\s+ficou de/,
+];
+const RE_QUICK = /\b(aprovar|aprova|responder|responde|dar (?:um )?ok|validar|olhar|assinar|enviar|mandar|encaminhar|confirmar|liberar|destravar|r[áa]pid\w*|agendar|marcar)\b/i;
+const RE_MIT = /\b(estrat[ée]g\w*|planejamento|apresenta[çc][ãa]o|proposta|fechar|importante|prioridade|grande entrega|diretrizes|or[çc]amento anual)\b/i;
+const NOT_NAME = new Set(['O','A','Os','As','Que','Se','Sobre','Hoje','Amanhã','Time','Equipe','Cliente','Retorno']);
+
+function cleanLine(s) {
+  return s
+    .replace(/^\[?\d{1,2}[\/.]\d{1,2}(?:[\/.]\d{2,4})?,?\s*\d{1,2}:\d{2}(?::\d{2})?\]?\s*(?:-\s*)?(?:[^:\n]{1,30}:\s)?/, '') // carimbo do WhatsApp
+    .replace(/^[-•*–\d.)\s]+/, '')
+    .trim();
+}
+function classify(line) {
+  let category = 'medium', owner = '';
+  if (RE_FOLLOW.test(line)) {
+    category = 'followup';
+    for (const re of RE_OWNER) { const m = line.match(re); if (m && !NOT_NAME.has(m[1])) { owner = m[1]; break; } }
+  } else if (RE_QUICK.test(line)) category = 'quick';
+  else if (RE_MIT.test(line)) category = 'mit';
+  const learned = learnedCategory(line);
+  if (learned) category = learned;
+  if (category === 'followup' && !owner) owner = knownOwner(line);
+  return { text: line.replace(/[.;]+$/, ''), category, owner };
+}
+function heuristicTriage(raw) {
+  return raw.split(/\n+|;|(?<=[.!?])\s+(?=[A-ZÀ-Ý0-9])/).map(cleanLine).filter(s => s.length > 2).map(classify);
+}
+
+async function browserGeminiTriage(raw) {
+  const ex = S.learn.examples.slice(-30).map(x => `- "${x.text}" → ${x.category}${x.owner ? ' (owner: ' + x.owner + ')' : ''}`).join('\n');
+  const prompt = `Você organiza demandas de um gerente de projetos de uma agência de publicidade.
+Divida o texto em tarefas independentes e acionáveis (verbo no infinitivo, curtas, em português) e classifique cada uma:
+- "mit": entrega estratégica de alto impacto (no máximo 1)
+- "quick": resolve em menos de 5 minutos (aprovar, responder, dar ok, encaminhar)
+- "medium": execução ou revisão de 30 a 45 minutos
+- "followup": depende de outra pessoa (cobrar, aguardar, pedir para alguém). Preencha "owner" com o primeiro nome da pessoa.
+- "backlog": ideia ou demanda sem urgência para hoje
+Ignore saudações, carimbos de horário e nomes de remetentes do WhatsApp.
+${ex ? 'Exemplos de como ele classifica (siga este critério):\n' + ex + '\n' : ''}Responda só com JSON: {"tasks":[{"text":"","category":"","owner":""}]}
+Texto:
+"""${raw}"""`;
+  const model = (S.cfg.model || MODEL_ID).trim();
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(S.cfg.key)}`, {
+    method:'POST', headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }], generationConfig:{ responseMimeType:'application/json', temperature:0.2 } }),
+  });
+  if (!res.ok) throw new Error(`Gemini respondeu ${res.status}`);
+  const data = await res.json();
+  const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const parsed = JSON.parse(txt.replace(/^```json|```$/g, '').trim());
+  const arr = Array.isArray(parsed) ? parsed : parsed.tasks;
+  if (!Array.isArray(arr) || !arr.length) throw new Error('resposta vazia');
+  return arr;
+}
+
+async function triage() {
+  const raw = $('#raw').value.trim();
+  if (!raw) { $('#raw').focus(); return; }
+  const btn = $('#btnTriage'); btn.disabled = true; $('#triageLabel').textContent = 'Triando…';
+  let items = null, note = '';
+  try {
+    if (!online()) note = 'Sem internet: usei o motor local.';
+    else {
+      if (connected() && S.meta.ai !== false) {
+        try {
+          const r = await api('triage', { text: raw, examples: S.learn.examples.slice(-30) });
+          items = r.tasks; S.meta.ai = true; S.meta.aiModel = r.model || S.meta.aiModel;
+        } catch (err) {
+          if (err.message === 'no_ai_key') S.meta.ai = false;
+          else note = `A IA não respondeu (${err.message}). Usei o motor local.`;
+        }
+      }
+      if (!items && S.cfg.key) {
+        try { items = await browserGeminiTriage(raw); note = ''; }
+        catch (err) { note = `A IA não respondeu (${err.message}). Usei o motor local.`; }
+      }
+    }
+    if (items) items = items.map(x => ({ text: String(x.text || '').trim(), category: CATS[x.category] ? x.category : 'medium', owner: String(x.owner || '').trim() })).filter(x => x.text);
+    if (!items || !items.length) items = heuristicTriage(raw);
+    items = items.map(remember).map(x => ({ ...x, owner: x.category === 'followup' ? (x.owner || knownOwner(x.text)) : '' }));
+  } finally { btn.disabled = false; $('#triageLabel').textContent = 'Triar'; }
+  S.draft = items.map(x => ({ ...x, orig: x.category }));
+  save();
+  renderDraft(note);
+  render();
+}
+
+function renderDraft(note = '') {
+  const box = $('#draft');
+  if (!S.draft.length) { box.hidden = true; box.innerHTML = ''; return; }
+  const opts = cat => ORDER.map(k => `<option value="${k}" ${k === cat ? 'selected' : ''}>${CATS[k].short}</option>`).join('');
+  box.hidden = false;
+  box.innerHTML = `
+    <h4>Revise antes de adicionar (${S.draft.length})</h4>
+    ${note ? `<p class="cc-draft__note">${esc(note)}</p>` : ''}
+    ${S.draft.map((d, i) => `
+      <div class="cc-draft__row" data-i="${i}">
+        <select class="cc-input" data-f="category" aria-label="Categoria">${opts(d.category)}</select>
+        <input class="cc-input cc-d-text" data-f="text" value="${esc(d.text)}" aria-label="Tarefa">
+        <input class="cc-input" data-f="owner" value="${esc(d.owner)}" placeholder="Responsável" aria-label="Responsável" list="ownersList" ${d.category === 'followup' ? '' : 'disabled'}>
+        <button class="sz-btn sz-btn--ghost sz-btn--sm sz-btn--icon" data-drop aria-label="Remover da prévia">${ico('x', true)}</button>
+      </div>`).join('')}
+    <div class="cc-draft__foot">
+      <button class="sz-btn sz-btn--ghost" id="btnDraftCancel">Descartar</button>
+      <button class="sz-btn sz-btn--primary" id="btnDraftOk">Adicionar ${S.draft.length} ${S.draft.length === 1 ? 'tarefa' : 'tarefas'}</button>
+    </div>`;
+}
+$('#draft').addEventListener('input', e => {
+  const row = e.target.closest('.cc-draft__row'); if (!row) return;
+  const d = S.draft[row.dataset.i]; d[e.target.dataset.f] = e.target.value;
+  if (e.target.dataset.f === 'category') {
+    const o = row.querySelector('[data-f=owner]'); o.disabled = e.target.value !== 'followup';
+    if (!o.disabled) { if (!o.value) { o.value = d.owner = knownOwner(d.text); } o.focus(); }
+  }
+});
+$('#draft').addEventListener('click', e => {
+  if (e.target.closest('[data-drop]')) { S.draft.splice(+e.target.closest('.cc-draft__row').dataset.i, 1); renderDraft(); return; }
+  const id = e.target.closest('button')?.id;
+  if (id === 'btnDraftCancel') { S.draft = []; renderDraft(); }
+  if (id === 'btnDraftOk') {
+    const items = S.draft.filter(d => d.text.trim()).map(d => ({ ...d, text: d.text.trim(), owner: d.category === 'followup' ? (d.owner || '').trim() : '' }));
+    [...items].reverse().forEach(d => addTask(d.text, d.category, d.owner));
+    const fixed = items.filter(d => d.orig !== d.category).length;
+    learn(items);
+    S.draft = []; $('#raw').value = ''; renderDraft(); commit();
+    toast(`${items.length} ${items.length === 1 ? 'tarefa adicionada' : 'tarefas adicionadas'}${fixed ? ` · ${fixed} ${fixed === 1 ? 'correção aprendida' : 'correções aprendidas'}` : ''}`);
+  }
+});
+
+$('#btnTriage').onclick = triage;
+$('#btnQuick').onclick = () => { const v = $('#raw').value.trim(); if (!v) { $('#raw').focus(); return; } addTask(v, 'quick'); $('#raw').value = ''; commit(); toast('Destrave adicionado'); };
+$('#raw').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); triage(); } });
+
+/* =========================================================
+   GOOGLE TASKS · SINCRONIZAÇÃO NOS DOIS SENTIDOS
+   ========================================================= */
+async function api(action, payload = {}, cfg = S.cfg) {
+  let res;
+  try {
+    res = await fetch(cfg.url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: cfg.token, ...payload }) });
+  } catch { throw new Error(online() ? 'Não consegui falar com o Apps Script. Confira a URL (termina em /exec) e se o acesso está como "Qualquer pessoa".' : 'Sem internet.'); }
+  let data;
+  try { data = await res.json(); } catch { throw new Error('O Apps Script não devolveu JSON. A implantação pode estar restrita ao domínio ou exigindo login. Reimplante com acesso "Qualquer pessoa".'); }
+  if (!data.ok) throw new Error(data.error === 'unauthorized' ? 'Token não confere. Copie de novo o CC_TOKEN das Propriedades do script.' : data.error);
+  return data;
+}
+
+let syncing = false, again = false, syncTimer = null;
+function scheduleSync(ms = 900) { if (!connected()) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, ms); }
+
+async function syncNow() {
+  if (!connected()) return;
+  if (!online()) { renderSync(); return; }
+  if (syncing) { again = true; return; }
+  syncing = true; S.sync = { state:'syncing' }; renderSync();
+  try {
+    // 1) Sobe mudanças locais
+    S.tasks = S.tasks.filter(t => !(t.deleted && !t.gid));
+    const pend = S.tasks.filter(t => t.pending).slice(0, 100);
+    if (pend.length) {
+      const sentRev = {};
+      const ops = pend.map(t => {
+        sentRev[t.id] = t.rev;
+        if (t.deleted) return { op:'delete', ref:t.id, id:t.gid };
+        const base = { ref:t.id, title: encodeTitle(t), status: t.done ? 'completed' : 'needsAction' };
+        return t.gid ? { op:'update', id:t.gid, ...base } : { op:'create', notes: t.link ? `Monday: ${t.link}` : 'Criada no Command Center', ...base };
+      });
+      const { results } = await api('batch', { ops });
+      results.forEach(r => {
+        const t = byId(r.ref); if (!t) return;
+        if (r.ok) {
+          if (t.deleted) { S.tasks = S.tasks.filter(x => x.id !== t.id); return; }
+          if (r.task) t.gid = r.task.id;
+          if (t.rev === sentRev[t.id]) t.pending = false;
+        } else if (r.notFound && !t.deleted) {
+          t.gid = null; // apagada no Google: recria no próximo ciclo
+        }
+      });
+    }
+    // 2) Arquivamento pendente (Ritual)
+    if (S.meta.pendingClear) { await api('clearCompleted'); S.meta.pendingClear = false; }
+    // 3) Baixa o estado do Google e mescla
+    const { tasks: remote } = await api('list');
+    const byGid = new Map(S.tasks.filter(t => t.gid).map(t => [t.gid, t]));
+    const seen = new Set();
+    remote.forEach(r => {
+      seen.add(r.id);
+      const d = decodeTitle(r.title), done = r.status === 'completed';
+      const t = byGid.get(r.id);
+      if (t) {
+        if (t.pending) return; // mudança local ainda não enviada vence
+        Object.assign(t, { text: d.text, category: d.category, owner: d.owner, done, completedAt: done ? (t.completedAt || r.completed || nowIso()) : null });
+      } else {
+        const link = ((r.notes || '').match(/https:\/\/\S*monday\.com\S*/) || [''])[0];
+        S.tasks.push({ id:uid(), gid:r.id, link, text:d.text, category:d.category, owner:d.owner, done, completedAt: done ? (r.completed || nowIso()) : null, createdAt: r.updated || nowIso(), pending:false, rev:0, deleted:false });
+      }
+    });
+    S.tasks = S.tasks.filter(t => !t.gid || seen.has(t.gid) || t.pending);
+    S.meta.lastSync = Date.now();
+    S.sync = { state:'ok' };
+  } catch (err) {
+    S.sync = { state:'error', msg: err.message };
+  } finally {
+    syncing = false; save(); render();
+    if (again) { again = false; scheduleSync(300); }
+  }
+}
+async function refreshInfo() {
+  if (!connected() || !online()) return;
+  try { const r = await api('ping'); S.meta.user = r.user || S.meta.user; S.meta.ai = !!r.ai; S.meta.aiModel = r.model || ''; save(); render(); } catch {}
+}
+
+$('#syncPill').onclick = () => {
+  if (!connected()) return openConfig();
+  if (S.sync.state === 'error') toast(S.sync.msg);
+  syncNow();
+};
+setInterval(() => { if (!document.hidden) syncNow(); }, 60000);
+window.addEventListener('focus', () => { if (Date.now() - (S.meta.lastSync || 0) > 20000) syncNow(); });
+window.addEventListener('online', () => { toast('Conexão de volta. Enviando suas mudanças…'); syncNow(); });
+window.addEventListener('offline', () => { renderSync(); toast('Sem internet. Pode continuar: tudo fica salvo aqui.'); });
+
+/* =========================================================
+   CONFIGURAÇÕES
+   ========================================================= */
+let cfgSnapshot = null;
+function openConfig() {
+  cfgSnapshot = { theme: S.cfg.theme, rotate: S.cfg.rotate, bg: S.cfg.bg };
+  $('#cfgUrl').value = S.cfg.url; $('#cfgToken').value = S.cfg.token; $('#cfgKey').value = S.cfg.key; $('#cfgModel').value = S.cfg.model;
+  document.querySelectorAll('input[name=theme]').forEach(r => r.checked = r.value === S.cfg.theme);
+  $('#cfgRotate').checked = !!S.cfg.rotate;
+  fillBgOptions();
+  $('#howto').open = !connected();
+  setCfgStatus(connected() && S.meta.user ? `Conectado como ${S.meta.user}` : '', 'ok');
+  renderAiStatus();
+  $('#config').showModal();
+}
+function fillBgOptions() {
+  const theme = S.cfg.theme, pair = THEME_BGS[theme];
+  const cur = currentBg();
+  $('#cfgBg').innerHTML = pair.map(b => `<option value="${b}" ${b === cur ? 'selected' : ''}>${BGS[b].name}</option>`).join('');
+  $('#fixedBgField').hidden = !!S.cfg.rotate;
+  const other = pair.find(b => b !== cur);
+  $('#rotateHint').textContent = S.cfg.rotate ? `Hoje: ${BGS[cur].name}. Amanhã: ${BGS[other].name}.` : 'O fundo escolhido abaixo fica fixo.';
+}
+// Prévia ao vivo do tema e do fundo
+document.querySelectorAll('input[name=theme]').forEach(r => r.addEventListener('change', () => { S.cfg.theme = r.value; lookKey = ''; applyLook(); fillBgOptions(); }));
+$('#cfgRotate').addEventListener('change', e => { S.cfg.rotate = e.target.checked; if (!S.cfg.rotate) S.cfg.bg = currentBg({ ...S.cfg, rotate:true }); lookKey = ''; applyLook(); fillBgOptions(); });
+$('#cfgBg').addEventListener('change', e => { S.cfg.bg = e.target.value; lookKey = ''; applyLook(); fillBgOptions(); });
+$('#config').addEventListener('close', () => {
+  if (cfgSnapshot) { Object.assign(S.cfg, cfgSnapshot); cfgSnapshot = null; lookKey = ''; render(); } // cancelado: volta ao visual salvo
+});
+
+function renderAiStatus(cfg = S.cfg) {
+  const n = S.learn.examples.length, c = Math.round(correctionsCount());
+  $('#aiStatus').textContent = (cfg.url && cfg.token)
+    ? (S.meta.ai ? `IA ativa no Apps Script com ${S.meta.aiModel || 'Gemini'}.` : 'O Apps Script ainda não tem GEMINI_API_KEY. Até lá, a triagem usa o motor local.')
+    : 'Conecte o Google Tasks para usar a IA guardada no Apps Script.';
+  $('#learnStatus').textContent = `Memória: ${n} ${n === 1 ? 'exemplo' : 'exemplos'} · ${c} ${c === 1 ? 'ajuste' : 'ajustes'} de palavra.`;
+}
+function readCfg() {
+  return { ...S.cfg, url: $('#cfgUrl').value.trim(), token: $('#cfgToken').value.trim(), key: $('#cfgKey').value.trim(), model: $('#cfgModel').value.trim() || MODEL_ID };
+}
+function setCfgStatus(msg, kind) { const el = $('#cfgStatus'); el.textContent = msg; el.className = 'cc-status ' + (kind || ''); }
+async function testCfg(cfg) {
+  if (!cfg.url && !cfg.token) { setCfgStatus('Sem Google Tasks: o app funciona só neste navegador.'); return true; }
+  if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(cfg.url)) { setCfgStatus('A URL deve começar com https://script.google.com/ e terminar em /exec.', 'err'); return false; }
+  if (!cfg.token) { setCfgStatus('Falta o token.', 'err'); return false; }
+  setCfgStatus('Testando…');
+  try {
+    const r = await api('ping', {}, cfg);
+    S.meta.user = r.user || ''; S.meta.ai = !!r.ai; S.meta.aiModel = r.model || '';
+    setCfgStatus(`Conectado como ${r.user}`, 'ok'); renderAiStatus(cfg); return true;
+  } catch (err) { setCfgStatus(err.message, 'err'); return false; }
+}
+$('#btnConfig').onclick = openConfig;
+$('#btnTest').onclick = () => testCfg(readCfg());
+$('#btnSaveCfg').onclick = async () => {
+  const cfg = readCfg();
+  const changedConn = cfg.url !== S.cfg.url || cfg.token !== S.cfg.token;
+  if (changedConn && !(await testCfg(cfg))) return;
+  S.cfg = cfg; cfgSnapshot = null; save(); $('#config').close(); render();
+  toast(connected() ? 'Configurações salvas. Sincronizando…' : 'Configurações salvas');
+  if (connected()) syncNow();
+};
+$('#btnForget').onclick = () => {
+  if (!confirm('Apagar tudo que o app aprendeu com as suas correções?')) return;
+  S.learn = { examples:[], weights:{}, owners:[] }; save(); renderAiStatus(); render(); toast('Memória de correções apagada');
+};
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
+
+/* =========================================================
+   BACKUP (JSON)
+   ========================================================= */
+$('#btnExport').onclick = () => {
+  const data = { app:'command-center', version:3, exportedAt: nowIso(), tasks: S.tasks, learn: S.learn };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `command-center-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('Backup exportado. O arquivo não leva o token nem a chave.');
+};
+$('#btnImport').onclick = () => $('#importFile').click();
+$('#importFile').onchange = async e => {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (data.app !== 'command-center' || !Array.isArray(data.tasks)) throw new Error('formato');
+    if (data.kind === 'import') { mergeImport(data); return; }
+    if (!confirm(`Substituir as tarefas deste navegador pelas ${data.tasks.length} do backup de ${new Date(data.exportedAt).toLocaleDateString('pt-BR')}?`)) return;
+    S.tasks = data.tasks.filter(t => t && t.id && t.text).map(t => ({ ...t, pending:true, rev:(t.rev || 0) + 1 }));
+    if (data.learn) S.learn = Object.assign({ examples:[], weights:{}, owners:[] }, data.learn);
+    cfgSnapshot = null; save(); $('#config').close(); render(); scheduleSync(200);
+    toast('Backup restaurado');
+  } catch { toast('Esse arquivo não é um backup do Command Center'); }
+};
+
+// Pacote de importação (ex.: tarefas vindas do Craft): soma às atuais e pula o que já existe
+function mergeImport(data) {
+  const have = new Set(visible().map(t => norm(t.text)));
+  const fresh = data.tasks.filter(t => t && t.text && CATS[t.category] && !have.has(norm(t.text)));
+  const skipped = data.tasks.length - fresh.length;
+  if (!fresh.length) { toast('Nada novo: todas as tarefas desse arquivo já estão no app'); return; }
+  if (!confirm(`Adicionar ${fresh.length} ${fresh.length === 1 ? 'tarefa' : 'tarefas'} de "${data.source || 'importação'}"?${skipped ? ` (${skipped} já existiam e serão puladas)` : ''}`)) return;
+  [...fresh].reverse().forEach(x => {
+    const t = addTask(x.text, x.category, x.category === 'followup' ? (x.owner || '') : '');
+    if (/^https:\/\//.test(x.link || '')) t.link = x.link;
+    if (x.since) t.createdAt = new Date(x.since + 'T12:00:00').toISOString();
+    if (t.owner && !S.learn.owners.some(o => norm(o) === norm(t.owner))) S.learn.owners.push(t.owner);
+  });
+  cfgSnapshot = null; save(); $('#config').close(); render(); scheduleSync(200);
+  toast(`${fresh.length} ${fresh.length === 1 ? 'tarefa importada' : 'tarefas importadas'}${skipped ? ` · ${skipped} puladas` : ''}`);
+}
+
+/* =========================================================
+   RITUAL DE FECHAMENTO
+   ========================================================= */
+function openRitual() {
+  const all = visible();
+  const doneToday = all.filter(t => t.done && isToday(t.completedAt)).length;
+  const pendDo = all.filter(t => !t.done && DO_CATS.includes(t.category)).length;
+  const pendF = all.filter(t => !t.done && t.category === 'followup').length;
+  $('#ritualStats').innerHTML = `
+    <div class="sz-stat"><b>${doneToday}</b><span>concluídas hoje</span></div>
+    <div class="sz-stat"><b>${pendDo}</b><span>ficam para amanhã</span></div>
+    <div class="sz-stat"><b>${pendF}</b><span>cobranças abertas</span></div>`;
+  $('#btnArchive').disabled = !all.some(t => t.done);
+  $('#ritual').showModal();
+}
+$('#btnRitual').onclick = openRitual;
+
+$('#btnCopy').onclick = async () => {
+  const all = visible();
+  const done = all.filter(t => t.done && isToday(t.completedAt));
+  const waiting = all.filter(t => !t.done && t.category === 'followup');
+  const tomorrow = all.filter(t => !t.done && DO_CATS.includes(t.category));
+  const tag = t => t.category === 'mit' ? '[MIT] ' : '';
+  const d = new Date().toLocaleDateString('pt-BR');
+  const parts = [`Resumo do dia ${d}`];
+  parts.push(done.length ? `\nEntregue\n${done.map(t => `• ${tag(t)}${t.text}`).join('\n')}` : '\nEntregue\n• (nada marcado como concluído)');
+  if (waiting.length) parts.push(`\nAguardando\n${waiting.map(t => `• ${t.owner ? t.owner + ' — ' : ''}${t.text}`).join('\n')}`);
+  if (tomorrow.length) parts.push(`\nSegue amanhã\n${tomorrow.map(t => `• ${tag(t)}${t.text}`).join('\n')}`);
+  try { await navigator.clipboard.writeText(parts.join('\n')); toast('Resumo copiado'); }
+  catch { toast('Não consegui acessar a área de transferência deste navegador'); }
+};
+
+// Arquivar: some da tela na hora; só confirma no Google depois de 6 s (janela do "Desfazer").
+function commitArchive() {
+  const arch = S.tasks.filter(t => t.archived);
+  if (!arch.length) return;
+  if (connected()) {
+    S.tasks = S.tasks.filter(t => !(t.archived && !t.gid));
+    if (S.tasks.some(t => t.archived)) S.meta.pendingClear = true;
+    save(); syncNow();
+  } else {
+    S.tasks = S.tasks.filter(t => !t.archived); save();
+  }
+}
+let archiveTimer = null;
+$('#btnArchive').onclick = () => {
+  const done = visible().filter(t => t.done);
+  if (!done.length) return;
+  done.forEach(t => t.archived = true);
+  $('#ritual').close(); save(); render();
+  clearTimeout(archiveTimer);
+  archiveTimer = setTimeout(commitArchive, 6000);
+  toast(`${done.length} ${done.length === 1 ? 'concluída arquivada' : 'concluídas arquivadas'}. Bom descanso!`, () => {
+    clearTimeout(archiveTimer); done.forEach(t => delete t.archived); save(); render();
+  }, 6000);
+};
+if (S.tasks.some(t => t.archived)) setTimeout(commitArchive, 0);
+
+/* =========================================================
+   TOAST COM DESFAZER
+   ========================================================= */
+let toastTimer;
+function toast(msg, undo, ms = 4000) {
+  const el = $('#toast'), btn = $('#toastUndo');
+  $('#toastMsg').textContent = msg;
+  btn.hidden = !undo;
+  btn.onclick = () => { el.classList.remove('show'); undo && undo(); };
+  el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), undo ? Math.max(ms, 6000) : ms);
+}
+
+/* =========================================================
+   INICIALIZAÇÃO
+   ========================================================= */
+buildSections();
+render();
+if (connected()) { syncNow(); refreshInfo(); }
+// Vira o dia com o app aberto: troca a data e o fundo
+let lastDay = dayIndex();
+setInterval(() => { if (dayIndex() !== lastDay) { lastDay = dayIndex(); render(); } }, 5 * 60000);
+</script>
+</body>
+</html>

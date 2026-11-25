@@ -1,0 +1,8 @@
+# segredos e backups pessoais
+*.json.bak
+command-center-backup-*.json
+.clasp.json
+.clasprc.json
+.env
+# pacotes de importação têm tarefas de clientes
+imports/
